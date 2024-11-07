@@ -9,24 +9,28 @@
         <p>(Tap field to edit)</p>
   
         <ProfileField
-          :value="profile.fullname"
+        type="student"  
+        :value="profile.fullname"
           field="fullname"
-          @update:value="profile.fullname = $event"
+          @update="refresh"
         />
         <ProfileField
-          :value="profile.matno"
+        type="student"  
+        :value="profile.matno"
           field="matno"
-          @update:value="profile.matric = $event"
+          @update="refresh"
         />
         <ProfileField
-          :value="profile.department"
+        type="student"  
+        :value="profile.department"
           field="department"
-          @update:value="profile.department = $event"
+          @update="refresh"
         />
         <ProfileField
-          :value="profile.level"
+        type="student"  
+        :value="profile.level"
           field="level"
-          @update:value="profile.level = $event"
+          @update="refresh"
         />
       </section>
   
@@ -54,12 +58,18 @@
     },
     
     methods: {
-      logOut() {
-        // Logic to log out and redirect to the login page
-        console.log('Logging out...');
-        studentAuth().logout();
-        this.$router.push('/login');
-      }
+      refresh(event){
+        console.log("the event is ", event);
+        studentAuth().update(event);
+        this.profile = studentAuth().student
+      },
+
+      // logOut() {
+      //   // Logic to log out and redirect to the login page
+      //   console.log('Logging out...');
+      //   studentAuth().logout();
+      //   this.$router.push('/login');
+      // }
     }
   };
   

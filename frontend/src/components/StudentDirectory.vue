@@ -16,7 +16,7 @@
   
         <div class="filter-dropdown">
           <label for="filter">Filter by:</label>
-          <select v-model="selectedDepartment" id="filter">
+          <select v-model="field" id="filter" @blur="search">
             <option v-for="filter in filters" :key="filter" :value="filter">
               {{ filter }}
             </option>
@@ -35,14 +35,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="student in filteredStudents" :key="student.matricNumber">
-            <td>{{ student.fullName }}</td>
-            <td>{{ student.matricNumber }}</td>
+          <tr v-for="student in students" :key="student.matricNumber">
+            <td>{{ student.fullname }}</td>
+            <td>{{ student.matno }}</td>
             <td>{{ student.department }}</td>
             <td>
               <font-awesome-icon 
                 icon="trash" 
-                @click="deleteStudent(student.matricNumber)" 
+                @click="deleteStudent(student.matno)" 
                 class="delete-icon"
               />
             </td>
@@ -53,31 +53,30 @@
   </template>
   
   <script>
-  import { ref, computed } from 'vue';
-  
+  import { ref } from 'vue';
+  import { lecturerAuth } from '@/composables/lecturerAuth';
   export default {
     
     setup() {
       // Sample data for students
-      const students = ref([
-        { fullName: "Franklin Ezeilo", matricNumber: "DE.2019/1234", department: "Computer Engineering" },
-        { fullName: "Franklin Ezeilo", matricNumber: "DE.2019/1235", department: "Computer Engineering" },
-        { fullName: "Franklin Ezeilo", matricNumber: "DE.2019/1236", department: "Computer Engineering" },
-        { fullName: "Franklin Ezeilo", matricNumber: "DE.2019/1237", department: "Computer Engineering" }
-      ]);
-  
+      const students = ref([]);
+      
       const searchQuery = ref('');
-      const selectedDepartment = ref('');
+      const field = ref('');
       const filters = ref(["Department","Name", "Matric Number"]);
+      const profile = lecturerAuth().lecturer;
   
-      const filteredStudents = computed(() => {
-        return students.value.filter(student => {
-          const matchesSearch = student.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                                student.matricNumber.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                                student.department.toLowerCase().includes(searchQuery.value.toLowerCase());
-          return matchesSearch;
-        });
-      });
+      const search = async () => {
+        // return students.value.filter(student => {
+        //   const matchesSearch = student.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
+        //                         student.matricNumber.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        //                         student.department.toLowerCase().includes(searchQuery.value.toLowerCase());
+          let query = await fetch(`${this.url}/student/students?field=${encodeURIComponent(this.field)}&value=${encodeURIComponent(this.searchQuery)}`);
+          console.log(query)
+          students.value = query;
+
+        };
+      
   
       const deleteStudent = (matricNumber) => {
         students.value = students.value.filter(student => student.matricNumber !== matricNumber);
@@ -86,11 +85,22 @@
       return {
         students,
         searchQuery,
-        selectedDepartment,
+        search,
+        field,
         filters,
-        filteredStudents,
+        profile,
         deleteStudent
       };
+    },
+    mounted(){
+      
+      
+      fetch(`${this.url}/student/students?field=department&value=${encodeURIComponent(this.profile.department)}`)
+      .then(res => res.json())
+      .then(res =>{
+        console.log(res.result)
+        this.students = res.result;
+      })
     }
   };
   </script>

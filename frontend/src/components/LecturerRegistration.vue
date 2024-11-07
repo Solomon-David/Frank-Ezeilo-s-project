@@ -5,7 +5,7 @@
     <form @submit.prevent="register">
       <div class="form-group">
         <label for="full-name">Full Name</label>
-        <input type="text" v-model="fullName" id="full-name" placeholder="Last name first" />
+        <input type="text" v-model="fullname" id="full-name" placeholder="Last name first" />
       </div>
 
       <div class="form-row">
@@ -17,7 +17,7 @@
           <label for="email">Email</label>
           <input type="email" v-model="email" id="email" placeholder="Email" />
         </div>
-      </div>
+      </div> 
 
       <div class="form-group">
         <label for="department">Department</label>
@@ -45,7 +45,8 @@
 
 <script>
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
- 
+import { lecturerAuth } from '@/composables/lecturerAuth';
+
 export default {
   name: 'LecturerRegistration',
   components: {
@@ -53,19 +54,46 @@ export default {
   },
   data() {
     return {
-      fullName: '',
+      fullname: '',
       staffId: '',
       email: '',
       department: '',
       password: '',
-      passwordVisible: false
+      passwordVisible: false,
+      login: lecturerAuth().login
     };
   },
   methods: {
     register() {
-      // Implement registration logic here
-      console.log("Registering:", this.fullName, this.staffId, this.email, this.department, this.password);
-    },
+    fetch(this.url + '/lecturer/register', { // Updated endpoint to `/lecturer/register`
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            fullname: this.fullname,
+            staffId: this.staffId, // Changed `matricNumber` to `staffId`
+            department: this.department,
+            level: this.level,
+            password: this.password
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            response.json().then(data => {
+                this.login(data);
+                console.log(data.message);
+                console.log(data);
+                this.$router.push('/lectdash'); // Updated redirect path to lecturer dashboard
+            });
+        } else {
+            response.json().then(data => alert(data.message));
+        }
+    })
+    .catch(error => {
+        console.log('Error:', error);
+    });
+},
     togglePasswordVisibility() {
       this.passwordVisible = !this.passwordVisible;
     }

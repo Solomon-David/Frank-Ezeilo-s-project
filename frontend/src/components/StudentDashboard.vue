@@ -4,6 +4,7 @@
         <h1>Student Dashboard</h1>
         
       </header>
+      <p>Welcome, {{ profile.fullname }} <br> ({{ profile.matno }})</p>
   
       <section class="academic-session">
         <h2>Select Academic Session</h2>
@@ -48,14 +49,18 @@
   </template>
   
   <script>
+  import { studentAuth } from '@/composables/studentAuth';
+
   export default {
     name: 'StudentDashboard',
+
     data() {
       return {
         selectedSession: '2022/2023',
         selectedSemester: 'Semester 1',
         sessions: ['2022/2023', '2021/2022', '2020/2021'], // example data
         semesters: ['Semester 1', 'Semester 2'], // example data
+        profile: studentAuth().student
       };
     },
     methods: {
@@ -180,6 +185,14 @@
     background: none;
     border: none;
     cursor: pointer;
+  }
+
+  ul{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    list-style: none;
+    
   }
   </style>
   

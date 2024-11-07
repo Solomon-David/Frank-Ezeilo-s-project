@@ -6,7 +6,8 @@ export function studentAuth() {
 
   // Check local storage on initialization
   const savedStudent = localStorage.getItem('student');
-  if (savedStudent) {
+  if (savedStudent!="undefined") {
+    console.log(savedStudent)
     student.value = JSON.parse(savedStudent);
     isAuthenticated.value = true;
   }
@@ -25,10 +26,18 @@ export function studentAuth() {
     localStorage.removeItem('student');
   };
 
+  const update = (updated) =>{
+    student.value=updated;
+    localStorage.setItem('student', JSON.stringify(updated));
+  };
+
+  
+
   return {
     student,
     isAuthenticated,
     login,
     logout,
+    update
   };
 }

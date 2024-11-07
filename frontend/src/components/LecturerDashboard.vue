@@ -8,7 +8,7 @@
       </header>
   
       <section class="welcome-message">
-        <p>Welcome, Dr. Emily Smith (Staff ID: 123456)</p>
+        <p>Welcome, {{ profile.fullname }} <br> ({{ profile.staffId }})</p>
       </section>
       
       <section class="task-list">
@@ -51,15 +51,22 @@
   </template>
   
   <script>
+  import { lecturerAuth } from '@/composables/lecturerAuth';
   export default {
+    data(){
+      return{
+        profile: lecturerAuth().lecturer
+      }
+    },
     methods: {
       navigateTo(page) {
         this.$router.push({ path: page });
       },
       logout() {
-        // Logic to handle logout
-        console.log("Logging out...");
-        this.$router.push({ name: 'login' });
+        lecturerAuth().logout()
+        // Logic to log out and redirect to the login page
+        console.log('Logging out...');
+        this.$router.push('/lectlogin');
       },
     },
   };

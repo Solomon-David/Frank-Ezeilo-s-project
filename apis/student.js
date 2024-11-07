@@ -56,7 +56,12 @@ router.patch('/profile', async (req, res) => {
         let result = await executeQuery(sql, params);
         if (result) {
             console.log("updated")
-            res.status(200).send("Updated")
+            const sql2 = `select * from student where ${field} = ?`;
+            const params2 = [newvalue];
+            let result2 = await executeQuery(sql2, params2);
+            if(result2){
+                res.status(200).json({result:result2[0]})
+            }
             }
         else {
             res.status(400).send( "Invalid username or password" );
@@ -66,5 +71,20 @@ router.patch('/profile', async (req, res) => {
                 res.status(500).send("Internal Server Error" );
         }
 });
+
+router.get('/students', async (req,res)=>{
+    const {field, value} = req.query;
+    const sql = `select fullname, matno, department from student where ${field} like ?`;
+    const params = [value+"%"];
+
+    const result = await executeQuery(sql, params);
+    if(result){
+        console.log(result)
+        res.status(200).json({result:result})
+    }
+    else{
+        res.status(200).send("nope")
+    }
+})
 
 module.exports = router;

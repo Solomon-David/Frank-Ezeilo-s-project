@@ -48,10 +48,12 @@ const createTables = async () => {
 
   const createLecturerTable = `
     CREATE TABLE IF NOT EXISTS Lecturer (
-      empno VARCHAR(20) PRIMARY KEY,
-      fullname VARCHAR(100) NOT NULL,
-      department VARCHAR(100)
-    )`;
+    staffId VARCHAR(20) PRIMARY KEY,
+    fullname VARCHAR(100) NOT NULL,
+    department VARCHAR(100) NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE
+)`;
 
   try {
     await executeQuery(createStudentTable);

@@ -4,12 +4,12 @@
     
     <form @submit.prevent="handleLogin">
       <div class="form-group">
-        <label for="staffIdEmail">Staff ID or Email</label>
+        <label for="staffIdEmail">Staff ID </label>
         <input
-          v-model="staffIdEmail"
+          v-model="staffId"
           type="text"
           id="staffIdEmail"
-          placeholder="Enter your staff ID or email"
+          placeholder="Enter your staff ID"
         />
       </div>
 
@@ -19,7 +19,7 @@
           <input
             v-model="password"
             :type="passwordVisible ? 'text' : 'password'"
-            id="password"
+            id="password" 
             placeholder="Enter your password"
           />
           <font-awesome-icon
@@ -38,16 +38,21 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { lecturerAuth } from '@/composables/lecturerAuth';
+import { ref, getCurrentInstance } from 'vue';
 import { useRouter } from 'vue-router';
 
 export default {
   name: 'LecturerLogin',
   setup() {
     const router = useRouter();
-    const staffIdEmail = ref('');
+    const staffId = ref('');
     const password = ref('');
     const passwordVisible = ref(false);
+    const { proxy } = getCurrentInstance();
+    const url = proxy.url;
+    const {login} = lecturerAuth()
+    const $router = useRouter();
 
     const togglePasswordVisibility = () => {
       passwordVisible.value = !passwordVisible.value;
@@ -55,7 +60,31 @@ export default {
 
     const handleLogin = () => {
       // Logic for handling login, e.g., API call
-      console.log('Login attempt:', { staffIdEmail: staffIdEmail.value, password: password.value });
+      fetch(url + '/lecturer/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              staffId:staffId.value,
+              password: password.value
+            })
+          })
+          .then(response => {
+              if (response.ok) {
+                response.json().then(data => {
+                login(data)
+                console.log(data.message);
+                console.log(data)
+                $router.push('/lectdash');
+                });
+            } else {
+              response.json().then(data => alert(data.message))
+            }
+      })
+      .catch(error => {
+        console.log('Error:', error);
+      });
     };
 
     const goToRegister = () => {
@@ -63,7 +92,7 @@ export default {
     };
 
     return {
-      staffIdEmail,
+      staffId,
       password,
       passwordVisible,
       togglePasswordVisibility,

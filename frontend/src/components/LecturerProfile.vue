@@ -7,19 +7,33 @@
       <section class="profile-info">
         <h3>Lecturer Profile Information</h3>
         <p>(Tap field to edit)</p>
+        
   
-        <ProfileField
-          :value="profile.name"
-          @update:value="profile.name = $event"
+        <ProfileField v-for="value,key in profile"
+        :key="key"
+        type="lecturer"  
+        :value="value"
+          :field="key"
+          @update="refresh"
+        />
+        <!-- <ProfileField
+        type="lecturer"  
+        :value="profile.matno"
+          field="matno"
+          @update="refresh"
         />
         <ProfileField
-          :value="profile.id"
-          @update:value="profile.id = $event"
+        type="lecturer"  
+        :value="profile.department"
+          field="department"
+          @update="refresh"
         />
         <ProfileField
-          :value="profile.department"
-          @update:value="profile.department = $event"
-        />
+        type="lecturer"  
+        :value="profile.level"
+          field="level"
+          @update="refresh"
+        /> -->
       </section>
   
       
@@ -28,6 +42,7 @@
   
   <script>
   import ProfileField from './ProfileField.vue';
+  import { lecturerAuth } from '@/composables/lecturerAuth';
   
   export default {
     name: 'ProfilePage',
@@ -36,18 +51,20 @@
     },
     data() {
       return {
-        profile: {
-          name: 'Emily Johnson',
-          id: 'CEG01022023',
-          department: 'Computer Engineering'
-        }
+        profile: lecturerAuth().lecturer
       };
     },
     methods: {
+      refresh(event){
+        console.log("the event is ", event);
+        lecturerAuth().update(event);
+        this.profile = lecturerAuth().lecturer
+      },
       logOut() {
+        lecturerAuth().logout()
         // Logic to log out and redirect to the login page
         console.log('Logging out...');
-        this.$router.push('/login');
+        this.$router.push('/lectlogin');
       }
     }
   };
