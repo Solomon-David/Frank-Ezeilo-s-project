@@ -13,7 +13,10 @@ const { pool} = require('./db');
 const apis = require("./apis/apis.js");
 
 // using cors
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND, // Replace with your frontend origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+}));
 
 // api calls from Vue app
 app.use("/api", apis);
@@ -23,15 +26,12 @@ app.use("/api", apis);
 
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
 
-app.get("/", function(req,res){
-    console.log("Connected");
-    res.send("Connected")
-})
+
 
 // Handle all other routes
-// app.get('*', (req, res) => {
-//  res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
-// });
+app.get('*', (req, res) => {
+ res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
+});
 
 app.listen(port, () => {
 console.log(`Server is running on port ${port}`);

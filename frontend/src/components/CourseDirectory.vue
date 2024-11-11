@@ -1,5 +1,5 @@
 <template>
-    <div class="course-directory">
+    <div class="course-directory" >
       <h2>Course Directory</h2>
       
       <div class="search-filter">
@@ -7,7 +7,7 @@
           <font-awesome-icon class="search-icon" :icon="['fas','search']" />
           <input 
             type="text" 
-            v-model="searchQuery" 
+            v-model="query" 
             placeholder="Search by course title or code..." 
             class="search-input"
           />
@@ -15,9 +15,9 @@
   
         <div class="filter-dropdown">
           <label for="filter">Filter by:</label>
-          <select v-model="selectedDepartment" id="filter">
-            <option v-for="filter in filters" :key="filter" :value="filter">
-              {{ filter }}
+          <select @change="search" v-model="filter" id="filter">
+            <option v-for="filter,key in filters" :key="filter" :value="filter">
+              {{ key }}
             </option>
           </select>
         </div>
@@ -33,84 +33,156 @@
             <th>Course Code</th>
             <th>Units</th>
             <th>Department</th>
+            <th>Level</th>
             
           </tr>
         </thead>
         <tbody>
-          <tr v-for="course in filteredCourses" :key="course.courseCode">
-            <td>{{ course.title }}</td>
-            <td>{{ course.courseCode }}</td>
-            <td>{{ course.units }}</td>
-            <td>{{ course.department }}</td>
-            <td>
-              <font-awesome-icon 
-                icon="edit" 
-                @click="editCourse(course.courseCode)" 
-                class="edit-icon"
-              />
-              <font-awesome-icon 
-                icon="trash" 
-                @click="deleteCourse(course.courseCode)" 
-                class="delete-icon"
-              />
-            </td>
-          </tr>
+          <CourseField class="coursefield" @delete="deleteCourse" @update="updateCourse" :course="course" v-for="course in courses" :key="course.code" />
         </tbody>
       </table>
-      <button class="add-course-btn" @click="addCourse">Add New Course</button>
+      <button class="add-course-btn" @click="dialogVisible = true">Add New Course</button>
+    </div>
+    <div class="add-dialog" v-show="dialogVisible">
+      <form @submit.prevent="addCourse">
+          <div>
+            <h4>Add a course</h4>
+            <button type="button" @click="dialogVisible=false">close</button>
+          </div>
+        <fieldset>
+          <label >
+            Course Code
+          </label>
+          <input  type="text" v-model="code" />
+        </fieldset>
+        
+        <fieldset>
+          <label >
+            Course Title
+          </label>
+          <input type="text" v-model="title" />
+        </fieldset>
+        
+        <fieldset>
+          <label >
+            Course Units
+          </label>
+          <input type="number" v-model="unit" />
+        </fieldset>
+        
+        <fieldset>
+          <label >
+            Department
+          </label>
+          <input type="text" v-model="department" />
+        </fieldset>
+        
+        <fieldset>
+          <label >
+            Level
+          </label>
+          <input type="number" v-model="level" step="100" min="100" max="500" />
+        </fieldset>
+
+        <input type="submit"  value="Add Course" class="addbtn">
+
+      </form>
     </div>
   </template>
   
   <script>
-  import { ref, computed } from 'vue';
+  import { ref, getCurrentInstance } from 'vue';
+  import { lecturerAuth } from '@/composables/lecturerAuth';
+  import CourseField from '@/components/CourseField.vue';
+  
   
   export default {
+    name: "CourseDirectory",
+    components:{
+      CourseField,
+  },
     setup() {
+      const url = getCurrentInstance().proxy.url;
+      const dialogVisible = ref(false);
       // Sample data for courses
-      const courses = ref([
-        { title: "Introduction to Programming", courseCode: "CS101", units: 3, department: "Computer Science" },
-        { title: "Data Structures", courseCode: "CS102", units: 3, department: "Computer Science" },
-        { title: "Calculus", courseCode: "MATH101", units: 4, department: "Mathematics" },
-        { title: "Physics", courseCode: "PHYS101", units: 3, department: "Physics" }
-      ]);
+      const courses = ref([]);
   
-      const searchQuery = ref('');
-      const selectedDepartment = ref('');
-      const filters = ref(["Department", "Course Title", "Unit", "Course Code"]);
-  
-      const filteredCourses = computed(() => {
-        return courses.value.filter(course => {
-          const matchesSearch = course.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                                course.courseCode.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                                course.department.toLowerCase().includes(searchQuery.value.toLowerCase());
-          return matchesSearch;
-        });
-      });
-  
-      const deleteCourse = (courseCode) => {
-        courses.value = courses.value.filter(course => course.courseCode !== courseCode);
+      const query = ref('');
+      const filter = ref('');
+      const filters = ref({"Department":"department", "Course Title":"title", "Units":"unit", "Level":"level", "Course Code":"code"});
+      const profile = lecturerAuth().lecturer
+      const department = ref(profile.value.department);
+      const code = ref('');
+      const title = ref('');
+      const unit = ref(0);
+      const level = ref(100);
+
+      const updateCourse = () =>{
+        loadCourses()
+      }
+      
+      const deleteCourse = (course) => {
+        console.log(course);
+        fetch(`${url}/course/delete`, {method:"delete", body:course})
+        .then((res => res.text()))
+        .then(res => alert(res))
+        .catch((err => alert(err)))
+        .finally(()=>{
+          loadCourses()
+        })
       };
   
-      const addCourse = () => {
+      const addCourse = async () => {
         // Implement logic to add a new course
-        console.log("Add new course");
+        let query = await fetch(`${url}/course/addcourse?code=${encodeURIComponent(code.value)}&department=${encodeURIComponent(department.value)}&title=${encodeURIComponent(title.value)}&level=${encodeURIComponent(level.value)}&unit=${encodeURIComponent(unit.value)}`);
+        let response = await query.text();
+        alert(response);
+        dialogVisible.value=false;
+        loadCourses();
       };
+
+      const loadCourses = () =>{
+        fetch(`${url}/course/courses?field=department&value=${encodeURIComponent(department.value)}`)
+      .then(res => res.json())
+      .then(res =>{
+        courses.value = res.result;
+        console.log(courses.value)
+      })
+      };
+
+      const search = () => {
+        console.log(filter.value, query.value)
+        fetch(`${url}/course/search?filter=${encodeURIComponent(filter.value)}&query=${encodeURIComponent(query.value)}`)
+        .then(res => res.json())
+        .then(res => {
+          console.log(res.result)
+          courses.value=res.result
+        })
+      }
   
-      const editCourse = (courseCode) => {
-        // Implement logic to edit a course
-        console.log("Edit course:", courseCode);
-      };
+     
   
       return {
         courses,
-        searchQuery,
-        selectedDepartment,
+        query,
+        search,
+        filter,
+        dialogVisible,
         filters,
-        filteredCourses,
-        deleteCourse,
+        url,
         addCourse,
-        editCourse
+        loadCourses,
+        updateCourse,
+        deleteCourse,
+        code,
+        title,
+        unit,
+        level,
+        department
       };
+    },
+    mounted(){
+      this.loadCourses();
     }
   };
   </script>
@@ -121,6 +193,7 @@
     margin: 0 auto;
     font-family: Arial, sans-serif;
     color: #333;
+    position: relative;
   }
   
   h1, h2 {
@@ -193,47 +266,94 @@
     font-size: 0.9em;
     margin-top: 2rem;
   }
-  
-  
-  
+    
   .course-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
   }
   
-  .course-table th, .course-table td {
+  .course-table th{
     padding: 0.25rem;
     border: none;
     text-align: left;
   }
 
-  .course-table td:last-child{
-    display:flex;
-  }
-  
   .course-table th {
     font-weight: bold;
     color: #2c3e50;
     font-size: 0.9em;
   }
-  
-  .edit-icon, .delete-icon {
-    color: #333;
-    cursor: pointer;
-    margin-right: 8px;
+ 
+  .add-dialog{
+    position:absolute;
+    height: 80vw;
+    width: 84vw;
+    bottom:40vw;
+    left: 6vw;
+    padding:4vw;
+    background-color: whitesmoke;
+    border:1px solid lightgray;
+    border-radius: 0.75em;
+  }  
+
+  .add-dialog > form{
+    height:100%;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+  }
+
+  .add-dialog fieldset{
+    border:none;
+    margin: 0.2em auto 0;
+    display:grid;
+    grid-template-columns: 2fr 3fr;
+    width:95%;
+    gap:5%;
+  }
+
+
+  .add-dialog label::after{
+    content: ":";
+  }
+
+  .add-dialog input{
+    border:1px solid lightgrey;
+    border-radius: 0.5em;
+    padding:0.25em ;
+  }
+
+  .add-dialog div{
+    display: flex;
+    position: relative;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .add-dialog div button{
+    position: absolute;
+    right:0%;
+    top:5%;
+    background-color: #6c5ce7;
+    color:white;
+    padding:0.25em 0.5em;
+    border-radius:0.5rem;
+    border:1px solid black;
   }
   
-  .edit-icon:hover {
-    color: #6c5ce7;
+  .add-dialog .addbtn{
+    background-color: #6c5ce7;
+    color:white;
+    padding:0.5em;
+    border-radius:0.5rem;
+    border:1px solid gray;
+    font-size:1rem;
   }
-  
-  .delete-icon {
-    color: #6c5ce7;
-  }
-  
-  .delete-icon:hover {
-    color: #6c5ce7;
+
+  .coursefield{
+    width:100%;
   }
   </style>
-  

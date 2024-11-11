@@ -7,19 +7,25 @@
       <section class="student-info">
         <h2>Student Assessment</h2>
         <p>Overview of current semester performance</p>
+        <form action="" class="search">
+        <div >
+          <input type="text" v-model="matno" name="matno" placeholder="Matric number"/>
+          <input type="text" v-model="department" name="department" placeholder="Department"/>
+        </div>
+        <div>
+          <button @click.prevent="search">Find Student</button>
+        </div>
+        </form>
+
         <div class="student-details">
-          <h3>{{ student.name }}</h3>
-          <p>{{ student.matricNumber }}</p>
+          <h3>{{ student.fullname }}</h3>
+          <p>{{ student.matno }}</p>
         </div>
       </section>
   
       <section class="performance-cards">
         <div class="card">
-          <h3>{{ student.gpa }}</h3>
-          <p>GPA</p>
-        </div>
-        <div class="card">
-          <h3>{{ student.cgpa }}</h3>
+          <h3>{{ Number(student.cgpa).toFixed(2) }}</h3>
           <p>CGPA</p>
         </div>
       </section>
@@ -38,14 +44,13 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="grade in student.grades" :key="grade.course">
-              <td>{{ grade.course }}</td>
-              <td>{{ grade.test1 }}</td>
-              <td>{{ grade.test2 }}</td>
-              <td>{{ grade.exam }}</td>
-              <td>{{ grade.total }}</td>
-              <td>{{ grade.grade }}</td>
-            </tr>
+            <GradingComponent
+                v-for="(course, index) in student.courses"
+                :key="course.code+course.test1+course.test2+course.exam"
+                :course="course"
+                :index="index"
+                @updateScore="update"
+              />
           </tbody>
         </table>
       </section>
@@ -53,24 +58,73 @@
   </template>
   
   <script>
+   import { ref, reactive, getCurrentInstance } from 'vue';
+   import { lecturerAuth } from '@/composables/lecturerAuth';
+import GradingComponent from './GradingComponent.vue';
+
   export default {
-    data() {
-      return {
-        student: {
-          name: 'Emily Johnson',
-          matricNumber: 'DE.2019/1234',
-          gpa: 3.8,
-          cgpa: 3.6,
-          grades: [
-            { course: 'Eng 432', test1: 10, test2: 10, exam: 59, total: 79, grade: 'A' },
-            { course: 'Eng 432', test1: 10, test2: 10, exam: 59, total: 79, grade: 'A' },
-            { course: 'Eng 432', test1: 10, test2: 10, exam: 59, total: 79, grade: 'A' },
-            { course: 'Eng 432', test1: 10, test2: 10, exam: 59, total: 79, grade: 'A' },
-            { course: 'Eng 432', test1: 10, test2: 10, exam: 59, total: 79, grade: 'A' },
-          ],
-        },
-      };
+    components: {
+      GradingComponent
     },
+    setup(){
+      // Sample data for students
+      const student = reactive({
+        fullname:'',
+        matno:'',
+        courses:[{
+          code:'',
+          test1:0,
+          test2:0,
+          exam:0,
+          total:0
+        }],
+        cgpa:0
+      });
+      const matno = ref('');
+      const profile = lecturerAuth().lecturer;
+      const department = ref(profile.value.department);
+      const {proxy} = getCurrentInstance();
+      const url = proxy.url;
+
+      const search = () =>{
+        fetch(`${url}/student/studentgrades?matno=${encodeURIComponent(matno.value)}&department=${encodeURIComponent(department.value)}`)
+      .then(res => res.json())
+      .then(res =>{
+        Object.assign(student,res)
+          console.log(student)
+      })
+      }
+
+      const update = (code, field, value) =>{
+        console.log(code, field, value)
+        fetch(`${url}/student/updategrades`,
+        {method:"PATCH",
+          headers: {
+            "Content-Type":"application/json"
+          },
+          body: JSON.stringify({
+            matno:matno.value,
+            code,
+            field,
+            value
+          })
+
+        }
+      )
+      .then(()=> search())
+
+      }
+
+      return{
+        matno,
+        profile,
+        department,
+        student,
+        search,
+        update
+      }
+    },
+ 
     methods: {
       
     },
@@ -145,18 +199,59 @@
     border-collapse: collapse;
   }
   
-  .grades-table th, .grades-table td {
+  .grades-table th{
     padding: 10px;
     border-bottom: 1px solid #ddd;
     text-align: left;
-  }
-  
-  .grades-table th {
     background-color: #f4f6f7;
+    font-size: 0.8em;
+  }
+
+ .grades-table th {
   }
   
-  .grades-table td {
-    font-size: 0.9rem;
+
+  .search{
+    display: flex;
+    flex-direction: column;
+  }
+
+  .search div{
+    display: flex;
+    justify-content: center;
+    margin: 2.5% auto;
+  }
+
+  .search div:nth-of-type(1){
+    justify-content: center;
+    gap:5.5%;
+    width:100%;
+  }
+
+  .search div:nth-of-type(1) input{
+    width:35%;
+    border-radius: 5rem;
+    padding:0.3rem;
+    padding-left: 0.3rem;
+  }
+
+  .search div:nth-of-type(2){
+    justify-content: center;
+    width:100%;
+  }
+
+  .search div:nth-of-type(2) button{
+    width:80%;
+    border-radius: 0.4rem;
+    padding:0.4rem;
+    background-color: #6c5ce7;
+    color:white;
+  }
+  
+  .search div:nth-of-type(2) button:active{ 
+    
+    color: #6c5ce7;
+    background-color:white;
   }
   </style>
   

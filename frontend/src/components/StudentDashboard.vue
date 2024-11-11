@@ -9,15 +9,12 @@
       <section class="academic-session">
         <h2>Select Academic Session</h2>
         <div class="dropdown-group">
-          <label for="session">Select Academic Session</label>
-          <select id="session" v-model="selectedSession">
-            <option v-for="session in sessions" :key="session" :value="session">{{ session }}</option>
+          <label for="session">Select Level</label>
+          <select id="session" v-model="selectedLevel">
+            <option v-for="level in levels" :key="level" :value="level">{{ level }}</option>
           </select>
   
-          <label for="semester">Select Semester</label>
-          <select id="semester" v-model="selectedSemester">
-            <option v-for="semester in semesters" :key="semester" :value="semester">{{ semester }}</option>
-          </select>
+          
         </div>
   
         <button class="search-button" @click="search">Search</button>
@@ -46,26 +43,49 @@
         </div>
       </section>
     </div>
+
+
+
+<!-- to view result -->
+    <ResultDialog class="showdialog" :student="student" @close="close" :courses="results" v-show="showDialog"/>
+  
+
+
   </template>
   
   <script>
   import { studentAuth } from '@/composables/studentAuth';
+  import ResultDialog from './ResultDialog.vue';
 
   export default {
     name: 'StudentDashboard',
-
+    components:{
+      ResultDialog
+    },
     data() {
+      
       return {
-        selectedSession: '2022/2023',
-        selectedSemester: 'Semester 1',
-        sessions: ['2022/2023', '2021/2022', '2020/2021'], // example data
-        semesters: ['Semester 1', 'Semester 2'], // example data
-        profile: studentAuth().student
+        profile: studentAuth().student,
+        levels:[], // example data
+        selectedLevel: 0,
+        showDialog:false,
+        student:{},
+        results:[]
       };
     },
     methods: {
       search() {
-        console.log('Searching with session:', this.selectedSession, 'and semester:', this.selectedSemester);
+        console.log('Searching with session:', this.selectedLevel, "matno", this.profile.matno);
+        fetch(`${this.url}/student/results?matno=${encodeURIComponent(this.profile.matno)}&level=${encodeURIComponent(this.selectedLevel)})}`)
+        .then(res => res.json())
+        .then(res => {
+          this.student=res[0]
+          this.results=res.result
+          this.showDialog=true
+          console.log(res[0], res.result)
+          
+        });
+      
         // Implement search logic here
       },
       navigateTo(route) {
@@ -73,8 +93,23 @@
       },
       logout(){
         console.log("logged out")
-      }
+      },
+      close(){
+        this.showDialog=false
+      },
+      levelgenerator(){
+        for(let i=100; i<=this.profile.level; i+=100){
+          this.levels.push(i)
+        }
+      },
+
+      
  
+    },
+    mounted(){
+      console.log(this.profile)
+      this.levelgenerator()
+      this.selectedLevel=this.profile.level
     }
   };
   </script>
@@ -193,6 +228,17 @@
     align-items: flex-start;
     list-style: none;
     
+  }
+
+  .showdialog{
+    position: absolute;
+    width: 84vw;
+    bottom: 40vw;
+    left: 6vw;
+    padding: 4vw;
+    background-color: whitesmoke;
+    border: 1px solid lightgray;
+    border-radius: 0.75em;
   }
   </style>
   

@@ -6,7 +6,7 @@
       <form @submit.prevent="loginFn">
         <div class="form-group">
           <label for="matric-number">Matric Number</label>
-          <input type="text" v-model="matricNumber" id="matric-number" placeholder="Matric Number" />
+          <input type="text" v-model="matno" id="matric-number" placeholder="Matric Number" />
         </div>
         <div class="form-group">
           <label for="password">Password</label>
@@ -27,7 +27,7 @@
     setup() {
       const { proxy } = getCurrentInstance();
       const url = proxy.url;
-      const matricNumber = ref("");
+      const matno = ref("");
       const password = ref("");
       const {login} = studentAuth();
       const $router = useRouter();
@@ -39,7 +39,7 @@
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              matno: matricNumber.value,
+              matno: matno.value,
               password: password.value
             })
           })
@@ -62,7 +62,7 @@
       }
 
       return{
-        matricNumber,
+        matno,
         password,
         loginFn
       }

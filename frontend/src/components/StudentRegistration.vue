@@ -10,8 +10,8 @@
         </div>
   
         <div class="form-group">
-          <label for="matricNumber">Matric Number</label>
-          <input type="text" id="matricNumber" v-model="matricNumber" placeholder="Matric Number" required />
+          <label for="matno">Matric Number</label>
+          <input type="text" id="matno" v-model="matno" placeholder="Matric Number" required />
         </div>
   
         <div class="form-group">
@@ -53,7 +53,7 @@
     data() {
       return {
         fullname: '',
-        matricNumber: '',
+        matno: '',
         department: '',
         password: '',
         level: '',
@@ -70,7 +70,7 @@
         },
         body: JSON.stringify({
           fullname: this.fullname,
-          matricNumber: this.matricNumber,
+          matno: this.matno,
           department: this.department,
           level: this.level,
           password: this.password

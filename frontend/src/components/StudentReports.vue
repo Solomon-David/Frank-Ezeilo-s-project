@@ -6,50 +6,100 @@
   
       <section class="report-section">
         <h2>Student Reports</h2>
-        <p>This table provides an overview of student grades across various courses.</p>
+        <p>This table provides an overview of student scores across various courses.</p>
         
         <div class="course-table">
-          <h3>Course: ENG 432</h3>
+          <div class="searchbar">
+            <h3>Course: </h3> <input v-model="code"  name="course"/>
+            <button class="search" @click="getStudents">Search</button>
+          </div>
           <div class="table-content">
+            <div class="studentheading">
+              <span class="student-head" v-for="(header) in headers" :key="header">{{ header }}</span>
+
+            </div>
             <div v-for="(student, index) in students" :key="index" class="student-row">
-              <span class="student-name">{{ student.name }}</span>
-              <span class="student-grade">{{ student.grade }}</span>
+              <span class="student-name">{{ student.fullname }}</span>
+              <span class="student-matno">{{ student.matno }}</span>
+              <span class="student-score"> {{ grade(student.score) }}  <span>({{ student.score }})</span></span>
             </div>
           </div>
         </div>
       </section>
   
-      <button @click="addStudent" class="add-button">
-        <span>+ Add</span>
-      </button>
+     
     </div>
   </template>
   
   <script>
+  import { ref,getCurrentInstance } from 'vue';
   export default {
     name: 'StudentReports',
-    data() {
-      return {
-        students: [
-          { name: 'Franklin Ezeilo', grade: 98 },
-          { name: 'Franklin Ezeilo', grade: 98 },
-          { name: 'Franklin Ezeilo', grade: 98 },
-          { name: 'Franklin Ezeilo', grade: 98 },
-          { name: 'Franklin Ezeilo', grade: 98 },
-          { name: 'Franklin Ezeilo', grade: 98 }
-        ]
-      };
-    },
-    methods: {
-      addStudent() {
-        // Functionality for adding a new student entry (could open a modal or navigate to a new page)
-        console.log('Add student button clicked');
+    setup() {
+    // Define reactive references
+    const students = ref([]);
+    const code = ref('');
+    const headers = [
+      "full name",
+      "matric number",
+      "score"
+    ];
+
+    // Get the `url` from the current instance proxy
+    const { proxy } = getCurrentInstance();
+    const url = proxy.url;
+
+    // Methods
+    const addStudent = () => {
+      // Functionality for adding a new student entry
+      console.log('Add student button clicked');
+    };
+
+    const grade = (total) => {
+      switch (true) {
+        case total > 74:
+          return 'A';
+        case total > 64:
+          return 'B';
+        case total > 54:
+          return 'C';
+        case total > 44:
+          return 'D';
+        case total > 34:
+          return 'E';
+        default:
+          return 'F';
       }
-    }
-  };
+    };
+
+    const getStudents = () => {
+      fetch(`${url}/student/studentandgrades?code=${encodeURIComponent(code.value)}`)
+        .then(res => res.json())
+        .then(res => {
+          console.log(res);
+          students.value = res;
+        });
+      console.log(students.value);
+    };
+
+    // Return all the variables and functions to make them accessible in the template
+    return {
+      url,
+      code,
+      students,
+      headers,
+      addStudent,
+      grade,
+      getStudents
+    };
+  }
+};
+
+
   </script>
   
   <style scoped>
+
   .student-reports {
     text-align: center;
     padding: 0 20px;
@@ -95,38 +145,48 @@
     align-items: flex-start;
   }
   
-  .student-row {
+  .student-row, .studentheading {
     display: flex;
     justify-content: space-between;
     padding: 10px 0;
     border-bottom: 1px solid #e0e0e0;
     width: 100%;
+    text-transform: capitalize;
+  }
+
+  .studentheading{
+    font-size: 1.1rem;
+  }
+
+  .student-row{
+    font-size: 0.9rem;
   }
   
   .student-name {
-    font-size: 16px;
     color: #4a4a4a;
   }
   
-  .student-grade {
-    font-size: 18px;
+  .student-score {
     color: #1a1a86;
   }
-  
-  .add-button {
-    background-color: #7962f2;
+
+  .student-score span{
+    font-size: 0.8rem;
+  }
+
+  .searchbar{
+    display: flex;
+    align-items: baseline;
+    gap:2.5%;
+  }
+
+  .search{
+    background-color: #6c5ce7;
     color: white;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-size: 16px;
-    margin-top: 20px;
-    border: none;
-    cursor: pointer;
-    width:100%;
+    padding: 0.25em 0.5em;
+    border-radius: 0.5rem;
+    border: 1px solid black;
   }
   
-  .add-button span {
-    font-size: 16px;
-  }
   </style>
   

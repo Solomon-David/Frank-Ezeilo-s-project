@@ -16,9 +16,9 @@
   
         <div class="filter-dropdown">
           <label for="filter">Filter by:</label>
-          <select v-model="field" id="filter" @blur="search">
-            <option v-for="filter in filters" :key="filter" :value="filter">
-              {{ filter }}
+          <select v-model="field" id="filter" @change="search">
+            <option v-for="filter, key in filters" :key="key" :value="filter">
+              {{ key }}
             </option>
           </select>
         </div>
@@ -35,7 +35,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="student in students" :key="student.matricNumber">
+          <tr v-for="student in students" :key="student.matno">
             <td>{{ student.fullname }}</td>
             <td>{{ student.matno }}</td>
             <td>{{ student.department }}</td>
@@ -53,7 +53,7 @@
   </template>
   
   <script>
-  import { ref } from 'vue';
+  import { ref, getCurrentInstance } from 'vue';
   import { lecturerAuth } from '@/composables/lecturerAuth';
   export default {
     
@@ -63,27 +63,46 @@
       
       const searchQuery = ref('');
       const field = ref('');
-      const filters = ref(["Department","Name", "Matric Number"]);
+      // const filters = ref(["Department","Name", "Matric Number"]);
+      const filters = ref({"Department":"department", "Name":"fullname", "Matric Number":"matno"});
       const profile = lecturerAuth().lecturer;
+      const {proxy} = getCurrentInstance();
+      const url = proxy.url;
+
+      const loadStudents = () =>{
+        console.log(url)
+        console.log(profile.value)
+
+        fetch(`${url}/student/students?field=department&value=${encodeURIComponent(profile.value.department)}`)
+      .then(res => res.json())
+      .then(res =>{
+        console.log(res)
+        students.value = res.result;
+      })
+      }
   
       const search = async () => {
-        // return students.value.filter(student => {
-        //   const matchesSearch = student.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-        //                         student.matricNumber.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        //                         student.department.toLowerCase().includes(searchQuery.value.toLowerCase());
-          let query = await fetch(`${this.url}/student/students?field=${encodeURIComponent(this.field)}&value=${encodeURIComponent(this.searchQuery)}`);
-          console.log(query)
-          students.value = query;
+        
+          let query = await fetch(`${url}/student/students?field=${encodeURIComponent(field.value)}&value=${encodeURIComponent(searchQuery.value)}`);
+          query = await query.json();
+          
+       
+          students.value = query.result;
 
         };
       
   
-      const deleteStudent = (matricNumber) => {
-        students.value = students.value.filter(student => student.matricNumber !== matricNumber);
+      const deleteStudent = async (matricNumber) => {
+        let query = await fetch(`${url}/student/delete/${encodeURIComponent(matricNumber)}`, {method:"DELETE"});
+        let response = await query.text();
+        alert(response);
+        loadStudents();
+
       };
   
       return {
         students,
+        loadStudents,
         searchQuery,
         search,
         field,
@@ -93,14 +112,7 @@
       };
     },
     mounted(){
-      
-      
-      fetch(`${this.url}/student/students?field=department&value=${encodeURIComponent(this.profile.department)}`)
-      .then(res => res.json())
-      .then(res =>{
-        console.log(res.result)
-        this.students = res.result;
-      })
+      this.loadStudents();
     }
   };
   </script>

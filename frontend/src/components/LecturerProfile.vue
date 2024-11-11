@@ -44,6 +44,7 @@
   import ProfileField from './ProfileField.vue';
   import { lecturerAuth } from '@/composables/lecturerAuth';
   
+  
   export default {
     name: 'ProfilePage',
     components: {

@@ -1,13 +1,13 @@
 <template>
     <div class="course-directory">
-      <h2>Course Directory</h2>
+      <h2>Courses </h2>
       
       <div class="search-filter">
         <div class="search-box">
           <font-awesome-icon class="search-icon" :icon="['fas','search']" />
           <input 
             type="text" 
-            v-model="searchQuery" 
+            v-model="query" 
             placeholder="Search by course title or code..." 
             class="search-input"
           />
@@ -15,11 +15,16 @@
   
         <div class="filter-dropdown">
           <label for="filter">Filter by:</label>
-          <select v-model="selectedDepartment" id="filter">
-            <option v-for="filter in filters" :key="filter" :value="filter">
-              {{ filter }}
+          <select @change="search" v-model="filter" id="filter">
+            <option v-for="filter,key in filters" :key="filter" :value="filter">
+              {{ key }}
             </option>
           </select>
+        </div>
+        <div class="register">
+          <div><label for="radio1">All</label><input @click="filterCourses" type="radio" id="radio1" v-model="status" value="all"></div>
+          <div><label for="radio2">Registered</label><input @click="filterCourses" type="radio" id="radio2" v-model="status" value="registered"></div>
+          <div><label for="radio3">Unregistered</label><input @click="filterCourses" type="radio" id="radio3" v-model="status" value="unregistered"></div>
         </div>
       </div>
   
@@ -32,80 +37,150 @@
             <th>Course Title</th>
             <th>Course Code</th>
             <th>Units</th>
-            <th>Grade</th>
+            <th>Level</th>
             
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="course in filteredCourses" :key="course.courseCode">
+        <tbody :key="listkey">
+          <tr v-for="course in filteredCourses" :key="course.code">
             <td>{{ course.title }}</td>
-            <td>{{ course.courseCode }}</td>
-            <td>{{ course.units }}</td>
-            <td>{{ course.grade }}</td>
+            <td>{{ course.code }}</td>
+            <td>{{ course.unit }}</td>
+            <td>{{ course.level }}</td>
             <td>
-              <font-awesome-icon 
-                icon="trash" 
-                @click="deleteCourse(course.courseCode)" 
-                class="delete-icon"
-              />
+              <button  @click="registeredCourses.includes(course.code)?unregisterCourse(course.code):registerCourse(course.code)" >
+               {{ isRegistered(course.code) }}
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
-      <button class="register-course-btn" @click="addCourse">Register Course</button>
     </div>
   </template>
   
   <script>
-  import { ref, computed } from 'vue';
+  import { ref, getCurrentInstance, computed } from 'vue';
+  import { studentAuth } from '@/composables/studentAuth';
   
   export default {
     setup() {
-      // Sample data for courses
-      const courses = ref([
-        { title: "Introduction to Programming", courseCode: "CS101", units: 3, grade:'A' },
-        { title: "Data Structures", courseCode: "CS102", units: 3, grade:'A' },
-        { title: "Calculus", courseCode: "MATH101", units: 4, grade:'A'},
-        { title: "Physics", courseCode: "PHYS101", units: 3, grade:'A'}
-      ]);
   
-      const searchQuery = ref('');
-      const selectedDepartment = ref('');
-      const filters = ref(["Department", "Course Title", "Unit", "Course Code"]);
+      const url = getCurrentInstance().proxy.url;
+ const courses = ref([]);
+      const listkey = ref(0);
+      const query = ref('');
+      const filter = ref('');
+      const filters = ref({ "Course Title":"title", "Units":"unit", "Level":"level", "Course Code":"code"});
+      const profile = studentAuth().student;
+      const department = ref(profile.value.department);
+      const registeredCourses = ref([]);
+      const level = ref(profile.value.level);
+      const status = ref("all");
+     
   
-      const filteredCourses = computed(() => {
-        return courses.value.filter(course => {
-          const matchesSearch = course.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                                course.courseCode.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                                course.department.toLowerCase().includes(searchQuery.value.toLowerCase());
-          return matchesSearch;
-        });
+      const isRegistered = (code) =>{
+        return registeredCourses.value.includes(code) ? "Unregister" : "Register";
+      }
+      
+      const unregisterCourse = (code) => {
+    // Implement logic to remove a student from a course
+    console.log(code);
+
+    fetch(`${url}/course/unregister`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ matno: profile.value.matno, code: code })
+        })
+        .then(res => res.text())
+        .then(res => alert(res))  // Alert the response from the server (success or failure)
+        .catch(err => alert(err)); // Alert any errors
+        console.log("done");
+        window.location.reload()
+      };
+      
+      
+      const registerCourse = (code) => {
+        // Implement logic to add a new course
+        console.log(code);
+        
+        fetch(`${url}/course/register`, {method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({matno:profile.value.matno, code:code})})
+        .then(res => res.text())
+        .then(res => alert(res))
+        .catch(err => alert(err));
+        console.log("done")
+        window.location.reload()
+      };
+
+      const filteredCourses = computed(()=>{
+            let filtered;
+            switch(status.value){
+              case "all":
+                filtered = courses.value;
+                break;
+                case "registered":
+                  filtered = courses.value.filter(x => registeredCourses.value.includes(x.code));
+                  break;
+                  case "unregistered":
+                    filtered = courses.value.filter(x => !registeredCourses.value.includes(x.code));
+                    break;
+                  }
+            return filtered;
       });
   
-      const deleteCourse = (courseCode) => {
-        courses.value = courses.value.filter(course => course.courseCode !== courseCode);
+      const loadCourses = () =>{
+        fetch(`${url}/course/studentcourses?department=${encodeURIComponent(profile.value.department)}&level=${encodeURIComponent(profile.value.level)}`)
+        .then(res => res.json())
+      .then(res =>{
+        courses.value = res;
+      })
+
+      fetch(`${url}/course/getRegistered/${encodeURIComponent(profile.value.matno)}`)
+      .then(reg => reg.json())
+      .then(res => {
+        registeredCourses.value = res;
+      })
       };
-  
-      const registerCourse = () => {
-        // Implement logic to add a new course
-        console.log("Add new course");
+
+      const search = () =>{
+        fetch(`${url}/course/studentsearch?field=${encodeURIComponent(filter.value)}&value=${encodeURIComponent(query.value)}&department=${encodeURIComponent(profile.value.department)}`)
+        .then(res => res.json())
+        .then(res => {
+          courses.value = res;
+        })
       };
-  
-      const editCourse = (courseCode) => {
-        // Implement logic to edit a course
-        console.log("Edit course:", courseCode);
-      };
-  
+
+
+
       return {
+        
+        department,
+        search,
+        level,
+        loadCourses,
+        listkey,
         courses,
-        searchQuery,
-        selectedDepartment,
+        query,
+        profile,
+        status,
         filters,
-        filteredCourses,
-        deleteCourse,
+        filter,
+        registeredCourses,
+        unregisterCourse,
         registerCourse,
-        editCourse
+        isRegistered,
+        filteredCourses
       };
+    },
+
+    mounted(){
+      this.loadCourses();
+      
     }
   };
   </script>
@@ -165,6 +240,7 @@
   .filter-dropdown {
     display: flex;
     align-items: center;
+    margin:0 10%;
   }
   
   .filter-dropdown label {
@@ -172,9 +248,10 @@
   }
   
   .filter-dropdown select {
-    padding: 0.5rem;
+    padding: 0.25rem;
     border: 1px solid #ddd;
     border-radius: 4px;
+    width: 50%;
   }
   
   .register-course-btn {
@@ -200,11 +277,20 @@
   .course-table th, .course-table td {
     padding: 0.25rem;
     border: none;
+    text-transform: capitalize;
     text-align: left;
   }
-
-  .course-table td:last-child{
-    display:flex;
+  
+  .course-table td{
+    font-size: 0.7rem;
+    text-align: center;
+  }
+  
+  .course-table td:nth-of-type(3){
+    text-transform: uppercase;
+  }
+  .course-table td:nth-of-type(2){
+    text-transform: uppercase;
   }
   
   .course-table th {
@@ -229,6 +315,12 @@
   
   .delete-icon:hover {
     color: #6c5ce7;
+  }
+
+  .register{
+    display:flex;
+    justify-content: center;
+    gap:5%;
   }
   </style>
   
