@@ -88,6 +88,8 @@ const createTables = async () => {
     console.log('Course table created or already exists.');
     await executeQuery(createLecturerTable);
     console.log('Lecturer table created or already exists.');
+    await executeQuery(createResultTable);
+    console.log('Result table created or already exists.');
   } catch (error) {
     console.error('Error creating tables:', error);
   }
