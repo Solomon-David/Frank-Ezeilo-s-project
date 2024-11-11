@@ -16,5 +16,6 @@ library.add(faEdit, faAngleRight, faSearch, faEye, faEyeSlash, faCog, faTrash, f
 const app = createApp(App);
 app.component('font-awesome-icon', FontAwesomeIcon);
 app.config.globalProperties.url = '/api';
+console.log(app.config.globalProperties.url)
 app.use(router); // Use the router
 app.mount('#app');

@@ -33,6 +33,7 @@
       const $router = useRouter();
   
       const loginFn = () => {
+        console.log(url)
           fetch(url + '/student/login', {
             method: 'POST',
             headers: {
