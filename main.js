@@ -24,13 +24,13 @@ app.use("/api", apis);
 // Serve Vue app
 
 
-app.use(express.static(path.join(__dirname, 'frontend/dist')));
+app.use(express.static( './frontend/dist'));
 
 
 
 // Handle all other routes
 app.get('*', (req, res) => {
- res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
+ res.sendFile('./frontend/dist/index.html');
 });
 
 app.listen(port, () => {
