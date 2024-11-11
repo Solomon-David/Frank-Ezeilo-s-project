@@ -5,7 +5,7 @@ const { pool, executeQuery } = require('./../db');
 router.post("/register", async (req, res) => {
     console.log(req.body);
     const { fullname, staffId, department, password, email, level } = req.body;
-    const query = "SELECT * FROM lecturer WHERE staffId = ?";
+    const query = "select * from lecturer where staffid = ?";
     const values = [staffId];
     
     try {
@@ -13,7 +13,7 @@ router.post("/register", async (req, res) => {
         if (result.length > 0) {
             res.status(400).json({ message: "User already exists" });
         } else {
-            const insertQuery = "INSERT INTO lecturer (fullname, staffId, department, email, password) VALUES (?, ?, ?, ?, ?)";
+            const insertquery = "insert into lecturer (fullname, staffid, department, email, password) values (?, ?, ?, ?, ?)";
             const insertValues = [fullname, staffId, department, email, password];
             await executeQuery(insertQuery, insertValues);
             
@@ -29,7 +29,7 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
     const { staffId, password } = req.body;
     console.log(staffId, password);
-    const sql = "SELECT fullname, staffId, department, email FROM lecturer WHERE staffId = ? AND password = ?";
+    const sql = "select fullname, staffid, department, email from lecturer where staffid = ? and password = ?";
     const values = [staffId, password];
     
     try {
@@ -52,13 +52,13 @@ router.patch('/profile', async (req, res) => {
     console.log(field, oldvalue, newvalue);
     
     try {
-        const sql = `UPDATE lecturer SET ${field} = ? WHERE ${field} = ?`;
+        const sql = `update lecturer set ${field} = ? where ${field} = ?`;
         const params = [newvalue, oldvalue];
         
         const result = await executeQuery(sql, params);
         if (result) {
             console.log("updated");
-            const sql2 = `SELECT * FROM lecturer WHERE ${field} = ?`;
+            const sql2 = `select * from lecturer where ${field} = ?`;
             const params2 = [newvalue];
             const result2 = await executeQuery(sql2, params2);
             

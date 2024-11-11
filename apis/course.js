@@ -128,7 +128,7 @@ router.delete('/unregister', async (req, res) => {
         console.log(matno, code);
         
         // SQL query to delete the record from the result table based on student number (matno) and course code (code)
-        let sql = "DELETE FROM result WHERE student = ? AND code = ?";
+        let sql = "delete from result where student = ? and code = ?";
         let result = await executeQuery(sql, [matno, code]);
         
         // If no rows were deleted, it means the student-course combination didn't exist

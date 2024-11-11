@@ -5,15 +5,15 @@ const { pool, executeQuery } = require('./../db');
 router.post("/register", async (req,res)=>{
     console.log(req.body)
     let {fullname, matno, level, department,password} =  req.body;
-    const query = "SELECT * FROM student WHERE matno = ?";
     const values = [matno];
+    const query = "select * from student where matno = ?";
     try {
         const result = await executeQuery(query, values);
         if (result.length > 0) {
             res.status(400).json({ message: "User already exists" });
+            const insertValues = [fullname, matno, department, password, level];
         } else {
-            const insertQuery = "INSERT INTO student (fullname, matno, department, password, level) VALUES (?, ?, ?, ?, ?)";
-    const insertValues = [fullname, matno, department, password, level];
+            const insertquery = "insert into student (fullname, matno, department, password, level) values (?, ?, ?, ?, ?)";
             await executeQuery(insertQuery, insertValues);
             
             res.json({ message: "User added successfully", fullname, matno,department, level});
@@ -104,11 +104,11 @@ router.delete("/delete/:matno", async (req,res)=>{
 
 router.get("/studentgrades", async (req,res)=>{
     const {matno, department} = req.query;
-    const sql = `SELECT 
+    const sql = `select 
   s.matno, 
   s.fullname, 
-  JSON_ARRAYAGG(
-    JSON_OBJECT(
+  json_arrayagg(
+    json_object(
       'code', r.code,
       'test1', r.test1,
       'test2', r.test2,
@@ -117,18 +117,18 @@ router.get("/studentgrades", async (req,res)=>{
       'level', c.level,
       'unit', c.unit
     )
-  ) AS courses,
- ROUND(IFNULL(SUM(grade) / SUM(c.unit), 0), 2) AS cgpa
-FROM 
-  student AS s
-JOIN 
-  result AS r ON s.matno = r.student
-JOIN 
-  course AS c ON r.code = c.code
-WHERE 
+  ) as courses,
+ round(ifnull(sum(grade) / sum(c.unit), 0), 2) as cgpa
+from 
+  student as s
+join 
+  result as r on s.matno = r.student
+join 
+  course as c on r.code = c.code
+where 
   s.matno = ? 
-  AND s.department = ?
-GROUP BY 
+  and s.department = ?
+group by 
   s.matno, s.fullname`;
 
     const params = [matno, department];
@@ -151,11 +151,11 @@ router.patch("/updategrades", async (req,res)=>{
 
 router.get("/studentandgrades", async (req,res)=>{
     const {code} = req.query;
-    const sql = `SELECT s.fullname, s.matno, r.total as score
-FROM result AS r 
-JOIN student AS s 
-ON r.student = s.matno 
-WHERE r.code = ?;`;
+    const sql = `select s.fullname, s.matno, r.total as score
+from result as r 
+join student as s 
+on r.student = s.matno 
+where r.code = ?;`;
     const result = await executeQuery(sql,[code]);
     console.log(result);
     res.json(result)
@@ -170,9 +170,9 @@ router.get("/results", async (req,res)=>{
     join course as c on r.code = c.code
     where s.matno = ? and c.level = ?`;
 
-    const sql2 = `SELECT s.matno, s.level,  ROUND(IFNULL(SUM(r2.grade) / SUM(c2.unit), 0), 2) as cgpa
-    FROM result AS r2
-    JOIN course AS c2 ON r2.code = c2.code 
+    const sql2 = `select s.matno, s.level,  round(ifnull(sum(r2.grade) / sum(c2.unit), 0), 2) as cgpa
+    from result as r2
+    join course as c2 on r2.code = c2.code 
     join student as s on r2.student = s.matno 
     where s.matno =?`;
     
